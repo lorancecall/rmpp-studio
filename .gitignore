@@ -1,0 +1,9 @@
+build/
+dist/
+out/
+recordings/
+__pycache__/
+*.gif
+*.mp4
+!examples/*.gif
+!examples/*.mp4

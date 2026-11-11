@@ -1,0 +1,54 @@
+# Select handwriting with the lasso, move it, delete it, undo.
+# Needs a notebook named "rmpp-tester demo" in My files (its page is cleared first), e.g.:
+#   rmpp-ctl run tutorials/lasso-move.tut -o examples/lasso-move.gif,out/lasso-move.mp4
+title: Select and move ink with the lasso
+output: examples/lasso-move.gif
+fps: 4
+out-fps: 8
+scale: 0.5
+
+# open the test notebook (never someone's real notes), clear its page (select everything, delete), take the pen
+setup open "rmpp-tester demo"
+setup expect #selectionButton
+setup tool #selectionButton
+setup lasso 150 60 1460 2080
+setup wait 1200
+setup tap-if Button icon=trashcan
+setup wait 800
+setup tool #primaryPenMenu
+setup wait 1000
+
+caption Write something with the pen
+wait 800
+draw points 420,500 420,800
+draw points 620,500 620,800
+draw points 420,650 620,650
+draw points 720,610 720,800
+draw points 718,520 724,532
+wait 600
+draw circle 1050 650 150
+wait 1200
+
+caption Tap the selection tool
+wait 800
+tap #selectionButton
+wait 1200
+
+caption Circle the ink you want to select
+lasso 340 420 1260 870
+wait 1500
+
+caption Drag the selection to move it
+swipe 800 650 800 1350 900
+wait 1800
+
+caption The menu above the selection: delete, convert, copy, cut
+wait 2500
+
+caption Delete it
+tap Button icon=trashcan
+wait 1500
+
+caption Undo brings it back
+tap #undoButton
+wait 2000
