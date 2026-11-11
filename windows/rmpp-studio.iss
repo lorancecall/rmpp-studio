@@ -34,6 +34,11 @@ ChangesEnvironment=yes
 Name: "addtopath"; Description: "Add the rmpp-ctl command to PATH (use it from any terminal)"; GroupDescription: "Command line:"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"
 
+[InstallDelete]
+; upgrades start from a clean program folder (files of older versions do not linger); user files live elsewhere
+Type: filesandordirs; Name: "{app}\_internal"
+Type: filesandordirs; Name: "{app}\cli"
+
 [Files]
 Source: "..\dist\rmpp-studio\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\dist\rmpp-ctl\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesubdirs createallsubdirs
