@@ -95,6 +95,8 @@ jobs:
     runs-on: ubuntu-24.04
     container: ${{ matrix.image }}
     steps:
+      - if: startsWith(matrix.image, 'opensuse')
+        run: zypper -n install -y tar gzip   # for actions/checkout
       - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
         with:

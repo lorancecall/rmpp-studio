@@ -28,7 +28,7 @@ rpm-zypper)
 tar|appimage)
     # a desktop's usual libraries (what the deb / rpm declare as dependencies)
     if command -v pacman >/dev/null; then
-        pacman -Sy --noconfirm --needed mesa libglvnd fontconfig freetype2 ttf-dejavu libxkbcommon-x11 dbus \
+        pacman -Syu --noconfirm --needed mesa libglvnd fontconfig freetype2 ttf-dejavu libxkbcommon-x11 dbus \
             openssh xorg-server-xvfb xorg-xwd imagemagick tar gzip >/dev/null
     elif command -v apt-get >/dev/null; then
         export DEBIAN_FRONTEND=noninteractive
