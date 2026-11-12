@@ -35,7 +35,7 @@ import tarfile
 import tempfile
 import time
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 TOOL = "/usr/lib/rmpp-remote/rmpp-remote"
 REC_DIR = "/tmp/rmpp-remote/rec"

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=rmpp-studio
+Comment=Record, edit and export reMarkable Paper Pro tutorials
+Exec=rmpp-studio
+Icon=rmpp-studio
+Terminal=false
+Categories=AudioVideo;Video;Utility;
+StartupWMClass=rmpp-studio
