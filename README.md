@@ -106,8 +106,8 @@ A recording is a folder with `f000000.png ...` (only changed frames) and `frames
 
 ## rmpp-studio (GUI)
 
-A small video editor for tablet tutorials (PySide6 / Qt 6; runs on Windows, macOS and Linux from source, the
-Windows installer bundles everything).
+A small video editor for tablet tutorials (PySide6 / Qt 6; Windows, macOS and Linux, each release file bundles
+everything).
 
 | Area | What |
 |---|---|
@@ -123,7 +123,20 @@ Windows installer bundles everything).
 - **Windows**: `rmpp-studio-setup-<version>.exe` from the release (per-user, no admin rights). It installs the app and
   the `rmpp-ctl` command (a self-contained program in `…\rmpp-studio\cli`, no Python needed) and, with the
   default option "Add the rmpp-ctl command to PATH", adds that folder to your user PATH; uninstalling removes it.
-- **macOS / Linux**: from this checkout, `./install.sh` (python3 ≥ 3.9). It makes its own venv in
+- **Linux** (x86_64; Ubuntu 22.04+, Debian 12+, Linux Mint 21+, Fedora, RHEL / Rocky / Alma 9+, openSUSE, Arch, ...;
+  glibc 2.34 or newer), from the release:
+  - `.deb` (Ubuntu, Debian, Mint, Pop!_OS): `sudo apt install ./rmpp-studio_<version>_amd64.deb`
+  - `.rpm` (Fedora, RHEL / Rocky / Alma, openSUSE): `sudo dnf install ./rmpp-studio-<version>-1.x86_64.rpm`
+    (openSUSE: `sudo zypper install --allow-unsigned-rpm ./rmpp-studio-...rpm`)
+  - `.AppImage` (any distribution, the GUI only): `chmod +x`, then run it
+  - `.tar.gz` (any distribution, GUI + `rmpp-ctl`): unpack, run `./rmpp-studio` or `./rmpp-ctl`
+
+  The packages install to `/opt/rmpp-studio` with `rmpp-studio` and `rmpp-ctl` in `/usr/bin` and a menu entry.
+- **macOS** (14 Sonoma or newer; Apple Silicon `arm64` or Intel `x86_64`): `rmpp-studio-<version>-macos-<arch>.dmg`,
+  drag the app to Applications. It is not notarized: the first start needs right click > Open (or
+  `xattr -dr com.apple.quarantine /Applications/rmpp-studio.app`). The command-line tool is
+  `rmpp-ctl-<version>-macos-<arch>.tar.gz`.
+- **macOS / Linux from source**: from this checkout, `./install.sh` (python3 ≥ 3.9). It makes its own venv in
   `~/.local/share/rmpp-studio` (PySide6 + Pillow, nothing installed into your system Python), puts `rmpp-studio` and
   `rmpp-ctl` in its `bin/`, and adds that folder to PATH in your shell startup files (`~/.profile`, `~/.bashrc`,
   `~/.zshrc`, fish), marked with a comment. `./install.sh --cli-only` skips Qt; `./install.sh --uninstall` removes
@@ -147,7 +160,10 @@ Build the installer (Python with Pillow + PySide6 + PyInstaller, Inno Setup 6, t
 powershell -ExecutionPolicy Bypass -File windows/build.ps1   # -> dist/rmpp-studio-setup-<version>.exe
 ```
 
-The icon is drawn by `windows/make_icon.py`.
+The icon is drawn by `windows/make_icon.py`. The Linux and macOS release files are built by GitHub Actions
+(`.github/workflows/build.yml`: `unix/build.sh`, then `unix/package-linux.sh` / `unix/package-macos.sh`, then
+`unix/smoke-test.sh` in Ubuntu, Debian, Fedora, Rocky, openSUSE and Arch containers); it takes the tablet binaries
+from the draft release and uploads its files there.
 
 Edits of a recording (clips as `segments`, captions, export settings) are saved in its `edit.json` (`rmpp-ctl render <recording> out.mp4` uses it too). Settings
 (connection, last script, window layout) are kept in `%APPDATA%\rmpp-studio\studio.json` (macOS:
