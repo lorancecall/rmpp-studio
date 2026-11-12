@@ -9,6 +9,11 @@ script, or by an AI agent). Three parts:
 | **rmpp-ctl** | PC, command line | The same functions as commands and tutorial scripts (`.tut`): tap, draw, type, find UI items, screenshots, recording, rendering. |
 | **rmpp-remote** | the tablet | What does the work: an add-on inside xochitl (screen capture from the e-paper framebuffer, recording, UI lookup, text input, active pen) and a small tool (pen / touch input, real pen and finger positions). Installed from rmpp-studio (Tablet > Install). |
 
+![rmpp-studio: live tablet view, preview of the result with captions, clip timeline](docs/rmpp-studio.png)
+
+*rmpp-studio with a recording open: LIVE view of the tablet (click to tap or draw), PREVIEW of the edited result with
+its caption, the clip timeline below, and the caption list on the right.*
+
 Editing and exporting recordings works without a tablet; everything that looks at or touches the tablet needs
 rmpp-remote on it.
 
