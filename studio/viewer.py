@@ -2,13 +2,22 @@
 import os
 import time
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QCursor, QImage, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtCore import QEvent, QPointF, QRect, QRectF, Qt, Signal
+from PySide6.QtGui import QColor, QCursor, QImage, QKeySequence, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import QWidget
 
 from .common import PEN_CURSOR, ctl
 
 TW, TH = ctl.W, ctl.H   # tablet screen size (portrait)
+
+# keyboard capture: PC keys -> rmpp-remote "key" names (the rest is typed as text)
+KEY_NAMES = {Qt.Key.Key_Return: "enter", Qt.Key.Key_Enter: "enter", Qt.Key.Key_Backspace: "backspace",
+             Qt.Key.Key_Delete: "delete", Qt.Key.Key_Escape: "escape", Qt.Key.Key_Tab: "tab",
+             Qt.Key.Key_Left: "left", Qt.Key.Key_Right: "right", Qt.Key.Key_Up: "up", Qt.Key.Key_Down: "down",
+             Qt.Key.Key_Home: "home", Qt.Key.Key_End: "end", Qt.Key.Key_PageUp: "pageup",
+             Qt.Key.Key_PageDown: "pagedown", Qt.Key.Key_Space: "space"}
+CTRL_KEYS = {Qt.Key.Key_A: "a", Qt.Key.Key_C: "c", Qt.Key.Key_V: "v", Qt.Key.Key_X: "x", Qt.Key.Key_Z: "z",
+             Qt.Key.Key_Y: "y"}   # ctrl+<these> go to the tablet; other ctrl shortcuts (Ctrl+R, ...) stay rmpp-studio's
 
 
 class Viewer(QWidget):
@@ -18,6 +27,7 @@ class Viewer(QWidget):
     look = Signal(int, int)           # right click: items under this tablet point
     hover = Signal(int, int)          # tablet coordinates under the mouse
     penEntered = Signal()             # the real pen came into range (time to ask which pen is active)
+    keys = Signal(str)                # keyboard capture: "text <utf8>" or "key [ctrl+|shift+]<name>"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -38,6 +48,8 @@ class Viewer(QWidget):
         self.ink_style = None         # InkStyle of the active pen (None: not a pen or not known)
         self.ink_menu = ""            # active tool menu: primary / secondary / eraserMenu / selectionButton / ...
         self.box = None               # highlighted UI item (tablet coordinates)
+        self.keyboard = False         # keyboard capture: keys typed here go to the tablet's focused field
+        self.preedit = ""             # text the PC's input method is still composing (Korean, Japanese, ...)
         self.update_cursor()
 
     # ---------- content ----------
@@ -88,6 +100,102 @@ class Viewer(QWidget):
             self.setCursor(Qt.CursorShape.WhatsThisCursor)
         else:
             self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    # ---------- keyboard capture ----------
+    def set_keyboard(self, on):
+        self.keyboard = on
+        self.preedit = ""
+        self.setAttribute(Qt.WidgetAttribute.WA_InputMethodEnabled, on)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus if on else Qt.FocusPolicy.NoFocus)
+        if on:
+            self.setFocus(Qt.FocusReason.OtherFocusReason)
+        elif self.hasFocus():
+            self.clearFocus()
+        self.update()
+
+    def event(self, ev):
+        # while capturing, plain keys (Space, arrows, I, O, S, Delete, ...) and ctrl+a/c/v/x/z/y are ours, not
+        # rmpp-studio's shortcuts
+        if ev.type() == QEvent.Type.ShortcutOverride and getattr(self, "keyboard", False):
+            M = Qt.KeyboardModifier
+            mods = ev.modifiers() & ~M.KeypadModifier
+            plain = not mods & (M.ControlModifier | M.AltModifier | M.MetaModifier)
+            ctrl_key = mods == M.ControlModifier and ev.key() in CTRL_KEYS
+            if plain or ctrl_key:
+                ev.accept()
+                return True
+        return super().event(ev)
+
+    def keyPressEvent(self, ev):
+        if not self.keyboard:
+            return super().keyPressEvent(ev)
+        mods = ev.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+        k = ev.key()
+        if mods & Qt.KeyboardModifier.ControlModifier:
+            if k in CTRL_KEYS:
+                self.keys.emit("key ctrl+" + CTRL_KEYS[k])
+            else:
+                super().keyPressEvent(ev)
+            return
+        if k in KEY_NAMES:
+            shift = "shift+" if mods & Qt.KeyboardModifier.ShiftModifier and k != Qt.Key.Key_Space else ""
+            self.keys.emit(f"key {shift}{KEY_NAMES[k]}")
+            return
+        t = ev.text()
+        if t and t.isprintable():
+            self.keys.emit("text " + t)
+        else:
+            super().keyPressEvent(ev)
+
+    def inputMethodEvent(self, ev):
+        if not self.keyboard:
+            return super().inputMethodEvent(ev)
+        commit = ev.commitString()
+        if commit:
+            for i, part in enumerate(commit.split(" ")):
+                if i:
+                    self.keys.emit("key space")
+                if part:
+                    self.keys.emit("text " + part)
+        self.preedit = ev.preeditString()
+        self.update()
+        ev.accept()
+
+    def inputMethodQuery(self, query):
+        if query == Qt.InputMethodQuery.ImEnabled:
+            return self.keyboard
+        if query == Qt.InputMethodQuery.ImCursorRectangle:   # the IME's candidate window next to our status line
+            return QRect(14, self.height() - 34, 1, 22)
+        return super().inputMethodQuery(query)
+
+    def focus_on_click(self):
+        if self.keyboard and not self.hasFocus():
+            self.setFocus(Qt.FocusReason.MouseFocusReason)
+
+    def focusInEvent(self, ev):
+        self.update()
+        super().focusInEvent(ev)
+
+    def focusOutEvent(self, ev):
+        self.update()
+        super().focusOutEvent(ev)
+
+    def paint_keyboard(self, p):
+        r = QRectF(8, self.height() - 38, self.width() - 16, 30)
+        active = self.hasFocus()
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(40, 90, 160, 230) if active else QColor(70, 70, 76, 230))
+        p.drawRoundedRect(r, 6, 6)
+        p.setPen(QColor(255, 255, 255))
+        if active:
+            msg = "⌨  Typing to the tablet's focused field" + (f"   ▸ {self.preedit}" if self.preedit else "")
+        else:
+            msg = "⌨  Keyboard: click the screen to type to the tablet"
+        p.drawText(r.adjusted(10, 0, -10, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, msg)
+        if active:   # outline: keys go to the tablet now
+            p.setBrush(Qt.BrushStyle.NoBrush)
+            p.setPen(QPen(QColor(60, 130, 220), 2))
+            p.drawRect(QRectF(self.rect()).adjusted(1, 1, -1, -1))
 
     # ---------- geometry ----------
     def screen_rect(self):
@@ -151,6 +259,8 @@ class Viewer(QWidget):
         p.setPen(QPen(QColor(46, 125, 50), 3))
         for x, y in self.touches:
             p.drawEllipse(self.to_widget(x, y), 14, 14)
+        if self.keyboard and self.interactive:
+            self.paint_keyboard(p)
 
     def draw_stroke(self, p, pts, style, menu):
         """a stroke written on the tablet, drawn like the tablet will show it"""
@@ -221,6 +331,7 @@ class Viewer(QWidget):
     def mousePressEvent(self, ev):
         if not self.interactive:
             return
+        self.focus_on_click()
         if ev.button() == Qt.MouseButton.RightButton:
             self.look.emit(*self.to_tablet(ev.position()))
             return

@@ -729,6 +729,38 @@ echo removed
 """
 
 
+class UiStream:
+    """One ssh connection that runs `rmpp-remote ui <line>` for every line written to it (keyboard capture): the
+    ssh setup (~0.3 s) is paid once, then each key takes a few milliseconds. Replies are not read."""
+
+    def __init__(self, tab):
+        remote = f'while IFS= read -r l; do {TOOL} ui "$l" >/dev/null 2>&1; done'
+        self.proc = subprocess.Popen(["ssh"] + tab.ssh_args() + [remote], stdin=subprocess.PIPE,
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                     creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+    def alive(self):
+        return self.proc.poll() is None
+
+    def send(self, cmd):
+        """cmd: one add-on command, e.g. "text 안녕" or "key enter" (newlines become spaces)"""
+        if not self.alive():
+            raise OSError("the keyboard connection to the tablet was closed")
+        line = " ".join(cmd.splitlines()) + "\n"
+        self.proc.stdin.write(line.encode("utf-8"))
+        self.proc.stdin.flush()
+
+    def close(self):
+        try:
+            self.proc.stdin.close()
+        except OSError:
+            pass
+        try:
+            self.proc.wait(2)
+        except subprocess.TimeoutExpired:
+            self.proc.kill()
+
+
 def recent_restarts(tab):
     """xochitl restarts in the last 10 minutes (more than 4 reboot the tablet)"""
     out = tab.ssh("journalctl -u xochitl --since -10min | grep -c Consumed", check=False).strip()

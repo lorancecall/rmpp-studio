@@ -169,6 +169,11 @@ class Studio(QMainWindow):
             b.clicked.connect(lambda _=False, m=mode: self.viewer.set_input_mode(m))
             self.input_group.addButton(b)
             h.addWidget(b)
+        self.kbd_btn = QToolButton(text="⌨ Keyboard", checkable=True, toolTip=(
+            "Keyboard capture: what you type (also Korean and other input methods, Enter, Backspace, arrows, "
+            "Ctrl+A/C/V/X/Z) goes to the text field that is focused on the tablet. Tap a field first."))
+        self.kbd_btn.toggled.connect(self.toggle_keyboard)
+        h.addWidget(self.kbd_btn)
         h.addSpacing(8)
         self.live = QCheckBox("Live", checked=bool(self.cfg.get("live", True)))
         self.live.setToolTip("Refresh the screen every second (needs the framebuffer capture of rmpp-remote ≥ 0.2)")
@@ -496,6 +501,7 @@ class Studio(QMainWindow):
         b.thumbs.connect(self.on_thumbs)
         b.script_line.connect(self.mark_script_line)
         self.viewer.action.connect(self.action)
+        self.viewer.keys.connect(self.send_key)
         self.viewer.look.connect(self.look)
         self.viewer.hover.connect(lambda x, y: self.coords.setText(f"{x}, {y}"))
         t = self.timeline
@@ -706,6 +712,40 @@ class Studio(QMainWindow):
                 self.insert_step(step)
             QTimer.singleShot(600, self.refresh_preview)
         self.jobs.run(cmd.split()[0], go, done)
+
+    # ---- keyboard capture: one ssh connection for all keys (UiStream), the screen refreshes after a pause
+    def toggle_keyboard(self, on):
+        if on and not self.conn:
+            self.kbd_btn.setChecked(False)
+            self.statusBar().showMessage("Keyboard: connect to the tablet first", 6000)
+            return
+        if not on:
+            self.close_key_stream()
+        self.viewer.set_keyboard(on)
+        if on:
+            self.statusBar().showMessage("Keyboard: tap a text field on the tablet, then type", 6000)
+
+    def close_key_stream(self):
+        stream, self.key_stream = getattr(self, "key_stream", None), None
+        if stream:
+            stream.close()
+
+    def send_key(self, cmd):
+        stream = getattr(self, "key_stream", None)
+        try:
+            if stream is None or not stream.alive():
+                stream = self.key_stream = ctl.UiStream(self.tablet())
+            stream.send(cmd)
+        except OSError as e:
+            self.key_stream = None
+            self.statusBar().showMessage(f"Keyboard: {e}", 8000)
+            return
+        if self.rec_steps.isChecked():
+            self.insert_step(cmd)
+        if not hasattr(self, "key_refresh"):
+            self.key_refresh = QTimer(self, singleShot=True, interval=700)
+            self.key_refresh.timeout.connect(self.refresh_preview)
+        self.key_refresh.start()
 
     @staticmethod
     def step_for_point(tab, cmd, x, y):
@@ -1411,6 +1451,7 @@ class Studio(QMainWindow):
         common.save_settings(self.cfg)
 
     def closeEvent(self, ev):
+        self.close_key_stream()
         self.pointer_cb.setChecked(False)
         self.toggle_pointer(False)
         self.save_settings()
