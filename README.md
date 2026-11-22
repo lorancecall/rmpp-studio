@@ -7,7 +7,7 @@ script, or by an AI agent). Three parts:
 |---|---|---|
 | **rmpp-studio** | PC (Windows, macOS, Linux) | A small video editor for tablet tutorials: LIVE monitor you can click on, PREVIEW of the result, clip timeline, captions, export to MP4 / WebM / MOV / GIF / WebP / APNG. |
 | **rmpp-ctl** | PC, command line | The same functions as commands and tutorial scripts (`.tut`): tap, draw, type, find UI items, screenshots, recording, rendering. |
-| **rmpp-remote** | the tablet | What does the work: an add-on inside xochitl (screen capture from the e-paper framebuffer, recording, UI lookup, text input, active pen) and a small tool (pen / touch input, real pen and finger positions). Installed from rmpp-studio (Tablet > Install). |
+| **rmpp-remote** | the tablet | What does the work: an add-on inside xochitl (screen capture from the e-paper framebuffer, recording, UI lookup, text input, active pen) and a small tool (pen / touch input, real pen and finger positions). Installed with rmpp setup, or from rmpp-studio (Tablet > Install). |
 
 ![rmpp-studio: live tablet view, preview of the result with captions, clip timeline](docs/rmpp-studio.png)
 
@@ -17,10 +17,25 @@ its caption, the clip timeline below, and the caption list on the right.*
 Editing and exporting recordings works without a tablet; everything that looks at or touches the tablet needs
 rmpp-remote on it.
 
-Tested on OS 3.29 (Qt 6.10). Needs developer mode (SSH as root) and
-[rmpp-preload](https://github.com/lorancecall/rmpp-packages) 0.2.0 or newer (install or update it with rmpp setup;
-it loads `/usr/lib/rmpp/preload.d/*.so` into xochitl). Like the rmpp packages, rmpp-remote keeps all its files under
-`/usr/lib/rmpp`; installing it moves an older `/usr/lib/rmpp-remote` (rmpp-studio 0.3.x) out of the way.
+Tested on OS 3.29 (Qt 6.10).
+
+> The tablet part, rmpp-remote, is one of the **rmpp add-ons**, built on
+> [rmpp-packages](https://github.com/lorancecall/rmpp-packages): it is installed by rmpp setup and loaded into
+> xochitl by rmpp-preload (no xovi), with all its files under `/usr/lib/rmpp`. How that differs from xovi:
+> [how it works](https://github.com/lorancecall/rmpp-packages/blob/main/docs/how-it-works.md).
+
+## Install
+
+1. **The app** on your computer, from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest):
+   Windows `rmpp-studio-setup-<version>.exe`; Linux `.deb`, `.rpm`, `.AppImage` or `.tar.gz`; macOS
+   `rmpp-studio-<version>-macos-<arch>.dmg` (not notarized: right click > Open the first time).
+2. **rmpp-remote on the tablet**: install **rmpp setup** from
+   [rmpp-packages](https://github.com/lorancecall/rmpp-packages#install) and tick **rmpp-remote** (developer mode is
+   needed; that page explains it). Or, once the app is connected: Tablet > Install / update rmpp-remote.
+3. Start rmpp-studio: the connection dialog finds the tablet (**USB cable** = 10.11.99.1) and can set up key login.
+
+Details for each system, the command-line tool `rmpp-ctl`, installing from source, building and removal:
+[docs/install.md](docs/install.md).
 
 ## How it works
 
@@ -44,20 +59,9 @@ Why these choices (measured on OS 3.29):
   `/home/root/.config/rmpp-remote/cal` with two lines `pen ax bx cx ay by cy` and `touch ...`
   (device = a·x + b·y + c).
 
-## Build and install
-
-```sh
-./build.sh                 # cross-build with ../sdk (Arm GNU aarch64 + Qt 6.10 headers + device Qt libs)
-./deploy.sh rmpp           # copy to the tablet, link into /usr/lib/rmpp/preload.d, restart xochitl
-./deploy.sh rmpp --remove  # take it out again
-```
-
-`deploy.sh` restarts xochitl (after `systemctl reset-failed`; xochitl reboots the tablet after more than 4
-restarts in 10 minutes). A restart locks the tablet when a passcode is set: unlock it by hand.
-
 ## CLI
 
-`rmpp-ctl` is on PATH after installing (see Install below); from a checkout without installing, use
+`rmpp-ctl` is on PATH after installing ([docs/install.md](docs/install.md)); from a checkout without installing, use
 `python rmpp-ctl.py` instead.
 
 ```sh
@@ -120,52 +124,7 @@ everything).
 | **Tools** (right), in workflow order | **Remote** (type text, keys, quick buttons, find UI items, record actions as script steps), **Script** (`.tut` editor, run + record, try, stop, current line highlighted), **Captions** (list, time, text, add / apply / move / delete, live marks while recording with Ctrl+M), **Export** (format: MP4 / WebM / MOV / GIF / WebP / APNG; codec for videos: H.264, H.265, AV1, VP9, ProRes; quality high / medium / small; fps, size, shorten pauses, hold end; progress; exported files with sizes), **Log**. |
 | **Toolbar** | Connection, ● Record (fps; Ctrl+R; stop asks for a name and opens the recording), 📷 Shot, ▶ Run script, ⇪ Export. |
 
-### Install
-
-- **Windows**: `rmpp-studio-setup-<version>.exe` from the release (per-user, no admin rights). It installs the app and
-  the `rmpp-ctl` command (a self-contained program in `…\rmpp-studio\cli`, no Python needed) and, with the
-  default option "Add the rmpp-ctl command to PATH", adds that folder to your user PATH; uninstalling removes it.
-- **Linux** (x86_64; Ubuntu 22.04+, Debian 12+, Linux Mint 21+, Fedora, RHEL / Rocky / Alma 9+, openSUSE, Arch, ...;
-  glibc 2.34 or newer), from the release:
-  - `.deb` (Ubuntu, Debian, Mint, Pop!_OS): `sudo apt install ./rmpp-studio_<version>_amd64.deb`
-  - `.rpm` (Fedora, RHEL / Rocky / Alma, openSUSE): `sudo dnf install ./rmpp-studio-<version>-1.x86_64.rpm`
-    (openSUSE: `sudo zypper install --allow-unsigned-rpm ./rmpp-studio-...rpm`)
-  - `.AppImage` (any distribution, the GUI only): `chmod +x`, then run it
-  - `.tar.gz` (any distribution, GUI + `rmpp-ctl`): unpack, run `./rmpp-studio` or `./rmpp-ctl`
-
-  The packages install to `/opt/rmpp-studio` with `rmpp-studio` and `rmpp-ctl` in `/usr/bin` and a menu entry.
-- **macOS** (14 Sonoma or newer; Apple Silicon `arm64` or Intel `x86_64`): `rmpp-studio-<version>-macos-<arch>.dmg`,
-  drag the app to Applications. It is not notarized: the first start needs right click > Open (or
-  `xattr -dr com.apple.quarantine /Applications/rmpp-studio.app`). The command-line tool is
-  `rmpp-ctl-<version>-macos-<arch>.tar.gz`.
-- **macOS / Linux from source**: from this checkout, `./install.sh` (python3 ≥ 3.9). It makes its own venv in
-  `~/.local/share/rmpp-studio` (PySide6 + Pillow, nothing installed into your system Python), puts `rmpp-studio` and
-  `rmpp-ctl` in its `bin/`, and adds that folder to PATH in your shell startup files (`~/.profile`, `~/.bashrc`,
-  `~/.zshrc`, fish), marked with a comment. `./install.sh --cli-only` skips Qt; `./install.sh --uninstall` removes
-  the venv, the commands and the PATH lines. On Linux it also adds a menu entry.
-- **From the checkout** (any OS): `pip install PySide6 pillow`, then
-
-```sh
-rmpp-studio.cmd              # Windows; elsewhere: python3 rmpp-studio.pyw
-```
-
-On first start a **connection dialog** asks how to reach the tablet (later: **Connection...** or Tablet > Connection): pick a profile from `~/.ssh/config` (tablet-looking ones first), or enter host / port / user / key directly (**USB cable** fills in 10.11.99.1). **Set up key login** creates a key (`~/.ssh/id_ed25519_rmpp_studio`) and appends it to the tablet's `authorized_keys`; the root password is typed into ssh's own console window, never into rmpp-studio. **Test connection** checks SSH, rmpp-preload and the add-on.
-
-The installed app needs only Windows' own OpenSSH client (`ssh` with a key for the tablet in `~/.ssh`) and, for MP4,
-ffmpeg (`winget install Gyan.FFmpeg`). **Tablet > Install / update rmpp-remote on the tablet** copies the bundled
-tablet add-on and tool and restarts xochitl (it refuses after 3 restarts in 10 minutes). User files go to
-`Documents\rmpp-studio` (`recordings`, `out`, `tutorials`, with the example tutorial copied there on first start).
-
-Build the installer (Python with Pillow + PySide6 + PyInstaller, Inno Setup 6, tablet binaries from `./build.sh`):
-
-```sh
-powershell -ExecutionPolicy Bypass -File windows/build.ps1   # -> dist/rmpp-studio-setup-<version>.exe
-```
-
-The icon is drawn by `windows/make_icon.py`. The Linux and macOS release files are built by GitHub Actions
-(`.github/workflows/build.yml`: `unix/build.sh`, then `unix/package-linux.sh` / `unix/package-macos.sh`, then
-`unix/smoke-test.sh` in Ubuntu, Debian, Fedora, Rocky, openSUSE and Arch containers); it takes the tablet binaries
-from the draft release and uploads its files there.
+Install: see [Install](#install) above and [docs/install.md](docs/install.md).
 
 Edits of a recording (clips as `segments`, captions, export settings) are saved in its `edit.json` (`rmpp-ctl render <recording> out.mp4` uses it too). Settings
 (connection, last script, window layout) are kept in `%APPDATA%\rmpp-studio\studio.json` (macOS:
