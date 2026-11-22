@@ -129,15 +129,22 @@ jobs:
       - run: python -m pip install -q "PySide6==$PYSIDE6" "pillow==$PILLOW" "pyinstaller==$PYINSTALLER"
       - run: PYTHON=python sh unix/build.sh
       - run: sh unix/package-macos.sh
-      - name: Smoke test (the app starts and keeps running)
+      - name: Smoke test (the app starts from Finder's way, keeps running; screenshot with the Dock)
         run: |
-          dist/rmpp-studio.app/Contents/MacOS/rmpp-studio > studio.log 2>&1 &
-          PID=$!
+          plutil -extract CFBundleIconFile raw dist/rmpp-studio.app/Contents/Info.plist
+          ls dist/rmpp-studio.app/Contents/Resources/*.icns
+          open dist/rmpp-studio.app
           sleep 15
-          kill -0 $PID
+          PID=$(pgrep -f rmpp-studio.app/Contents/MacOS/rmpp-studio)
+          screencapture -x "smoke-${{ matrix.runner }}.png" || true
           kill $PID
-          cat studio.log
           dist/rmpp-ctl/rmpp-ctl -h | head -3
+      - if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: smoke-${{ matrix.runner }}
+          path: smoke-*.png
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v5
         with:
           name: macos-${{ matrix.runner }}

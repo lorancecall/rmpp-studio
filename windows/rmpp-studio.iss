@@ -44,9 +44,10 @@ Source: "..\dist\rmpp-studio\*"; DestDir: "{app}"; Flags: ignoreversion recurses
 Source: "..\dist\rmpp-ctl\*"; DestDir: "{app}\cli"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\rmpp-studio"; Filename: "{app}\rmpp-studio.exe"
+; the same AppUserModelID as the app sets (studio/app.py), so the taskbar finds the icon through the shortcut
+Name: "{group}\rmpp-studio"; Filename: "{app}\rmpp-studio.exe"; AppUserModelID: "lorancecall.rmpp-studio"
 Name: "{group}\{cm:UninstallProgram,rmpp-studio}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\rmpp-studio"; Filename: "{app}\rmpp-studio.exe"; Tasks: desktopicon
+Name: "{autodesktop}\rmpp-studio"; Filename: "{app}\rmpp-studio.exe"; AppUserModelID: "lorancecall.rmpp-studio"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\rmpp-studio.exe"; Description: "{cm:LaunchProgram,rmpp-studio}"; Flags: nowait postinstall skipifsilent
