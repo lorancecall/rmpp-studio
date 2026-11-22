@@ -27,12 +27,14 @@ Tested on reMarkable Paper Pro, OS 3.29.1.
 Start at **[rmpp-packages](https://github.com/lorancecall/rmpp-packages#install)**: it explains developer mode and
 has **rmpp setup**, the installer for all rmpp add-ons, including rmpp-studio's tablet part.
 
-- In rmpp setup, tick **Remote control for rmpp-studio** (rmpp-remote; not selected by default).
+- In rmpp setup (the desktop app or the script), tick **Remote control for rmpp-studio** (rmpp-remote; not selected
+  by default). It installs `rmpp-preload` first ([all packages and dependencies](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md)).
 - The app on your computer, from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest):
   Windows `rmpp-studio-setup-<version>.exe`; Linux `.deb`, `.rpm`, `.AppImage` or `.tar.gz`; macOS `.dmg` (not
   notarized: right click > Open the first time). Its connection dialog finds the tablet (**USB cable** = 10.11.99.1).
-- After a reMarkable OS update: **Restore** in rmpp setup.
-- Other ways (the app's Tablet > Install, `rmpp-ctl`, from source, building) and removal:
+- After a reMarkable OS update: **Restore** in rmpp setup, then install rmpp-remote again (it is not a Vellum
+  package yet, so Restore does not bring it back): Install in rmpp setup, or Tablet > Install in the app.
+- Without rmpp setup, removing it, next to other mods, `rmpp-ctl`, from source, building:
   [docs/install.md](docs/install.md).
 
 ## Use
