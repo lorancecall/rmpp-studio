@@ -683,9 +683,8 @@ def save_recording(tab, out, state):
 # Installs into rmpp-preload 0.2+'s layout: /usr/lib/rmpp/rmpp-remote, linked as /usr/lib/rmpp/preload.d/40-rmpp-remote.so.
 # Like the rmpp packages: a file xochitl may have loaded is renamed to *.old or moved to /usr/lib/rmpp/.trash, never
 # deleted, and /usr/lib/rmpp/restart restarts xochitl once and deletes them afterwards. Never `systemctl stop xochitl`.
-PREPARE_OLD = """mkdir -p $P/.trash
-for o in /usr/lib/rmpp-remote /usr/lib/rmpp-tester; do   # rmpp-studio 0.3.x and its old name
-    [ ! -e $o ] || mv $o $P/.trash/$(echo ${o#/} | tr / _).$$
+PREPARE_OLD = """for o in /usr/lib/rmpp-remote /usr/lib/rmpp-tester; do   # rmpp-studio 0.3.x and its old name
+    [ ! -e $o ] || { mkdir -p $P/.trash && mv $o $P/.trash/$(echo ${o#/} | tr / _).$$; }
 done
 rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
 rmdir /usr/lib/rmpp-preload.d 2>/dev/null || true
@@ -720,7 +719,7 @@ REMOVE_SCRIPT = """P=/usr/lib/rmpp
 mount -o remount,rw /
 rm -f $P/preload.d/40-rmpp-remote.so
 if [ -d $P ]; then
-""" + PREPARE_OLD + """    [ ! -e $P/rmpp-remote ] || mv $P/rmpp-remote $P/.trash/rmpp-remote.$$
+""" + PREPARE_OLD + """    [ ! -e $P/rmpp-remote ] || { mkdir -p $P/.trash && mv $P/rmpp-remote $P/.trash/rmpp-remote.$$; }
 else   # no rmpp-preload 0.2: the old layout only
     rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
     rm -rf /usr/lib/rmpp-remote /usr/lib/rmpp-tester
