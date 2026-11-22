@@ -2,7 +2,41 @@
 
 The usual way: the app from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest), and the
 tablet part rmpp-remote from **rmpp setup** ([rmpp-packages](https://github.com/lorancecall/rmpp-packages#install)),
-which also sets up developer-mode SSH. This page has the details and the other ways.
+as the desktop app or the script: tick **Remote control for rmpp-studio**. This page covers the rest. Steps that are
+the same for every rmpp add-on live in rmpp-packages and are linked here, not repeated.
+
+## Packages
+
+| Part | How it is installed | Installs with it |
+|---|---|---|
+| rmpp-remote (tablet) | rmpp setup, from this project's latest release: not a Vellum package yet | needs `rmpp-preload` (rmpp setup installs it first) |
+| rmpp-studio, rmpp-ctl (computer) | the release files below | - |
+
+All packages and what needs what: [packages.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md).
+
+## Without rmpp setup
+
+- **From the app:** Tablet > Install / update rmpp-remote copies the tablet files bundled with the app and restarts
+  xochitl (it refuses after 3 restarts in 10 minutes). It needs `rmpp-preload` 0.2.0 or newer on the tablet:
+  `vellum add rmpp-preload` after [manual-install.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/manual-install.md) steps 1-2, or rmpp setup.
+- **By hand:** `./deploy.sh rmpp` from a checkout ([below](#build-and-install-by-hand)).
+
+Every way puts the add-on in `/usr/lib/rmpp/rmpp-remote` with the link `/usr/lib/rmpp/preload.d/40-rmpp-remote.so`
+and moves an older `/usr/lib/rmpp-remote` (rmpp-studio 0.3.x) out of the way.
+
+## Uninstall
+
+- **Just rmpp-remote:** `./deploy.sh rmpp --remove` from a checkout. rmpp setup removes it only with **Remove
+  everything** (it is not a Vellum package yet).
+- **What stays:** the optional calibration file `/home/root/.config/rmpp-remote/cal`, if you made one.
+- **The app:** uninstall it like any app (Windows: Settings > Apps; Linux: your package manager; macOS: move it to
+  the Trash). Recordings stay in `Documentsmpp-studio`.
+- **Everything rmpp, and before a factory reset:** [uninstall.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/uninstall.md).
+
+## Next to other mods
+
+rmpp-remote runs next to xovi and other Vellum packages: [how-it-works.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/how-it-works.md#next-to-other-mods).
+It injects input as a real pen and finger, so do not run two remote-control tools at once.
 
 ## The app and rmpp-ctl
 
@@ -51,17 +85,7 @@ The icon is drawn by `windows/make_icon.py`. The Linux and macOS release files a
 `unix/smoke-test.sh` in Ubuntu, Debian, Fedora, Rocky, openSUSE and Arch containers); it takes the tablet binaries
 from the draft release and uploads its files there.
 
-## rmpp-remote on the tablet
-
-- **rmpp setup**: tick rmpp-remote (not selected by default). Run it again to update.
-- **From the app**: Tablet > Install / update rmpp-remote copies the tablet files bundled with the app and restarts
-  xochitl (it refuses after 3 restarts in 10 minutes).
-- Both put the add-on in `/usr/lib/rmpp/rmpp-remote` with the link `/usr/lib/rmpp/preload.d/40-rmpp-remote.so`
-  (needs rmpp-preload 0.2.0 or newer, which rmpp setup installs) and move an older `/usr/lib/rmpp-remote`
-  (rmpp-studio 0.3.x) out of the way.
-- Removal: `./deploy.sh rmpp --remove` (below), or **Remove everything** in rmpp setup.
-
-## rmpp-remote by hand (development)
+## Build and install by hand
 
 ```sh
 ./build.sh                 # cross-build with ../sdk (Arm GNU aarch64 + Qt 6.10 headers + device Qt libs)
