@@ -154,11 +154,13 @@ jobs:
     needs: [tablet, linux, linux-test, macos]
     runs-on: ubuntu-24.04
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
         with:
           path: artifacts
           pattern: "{linux,macos-*}"
           merge-multiple: true
+      - run: cp rmpp-install.sh artifacts/   # for the rmpp installer (rmpp-mod.conf: assets)
       - name: Upload to the draft release (never to a published one)
         env:
           GH_TOKEN: ${{ github.token }}
