@@ -15,7 +15,7 @@ rmpp-ctl lasso 450 350 1450 850        # with the selection tool active
 rmpp-ctl text "hello 안녕" | key enter | key backspace | key ctrl+a
 rmpp-ctl expect '#selectionButton' 5000
 rmpp-ctl record start 4 ; ... ; rmpp-ctl record mark "A caption" ; ... ; rmpp-ctl record stop out.gif
-rmpp-ctl input < script.txt            # raw tablet script (below), one ssh call
+rmpp-ctl input < script.txt            # raw Paper Pro script (below), one ssh call
 rmpp-ctl run tutorials/lasso-move.tut -o out/lasso-move.gif,out/lasso-move.mp4   # videos need ffmpeg (PATH, $FFMPEG or winget)
 rmpp-ctl render recordings/<name> out/demo.webm --codec av1 --quality small   # .mp4 .webm .mov .gif .webp .apng
 ```
@@ -26,7 +26,7 @@ item's description as printed by `tree` (class, `#objectName`, `"text"`, `icon=n
 
 Coordinates are xochitl window pixels: portrait 1620 x 2160, origin top left, the same as in screenshots.
 
-## Tablet script (`rmpp-remote` on the tablet)
+## Paper Pro script (`rmpp-remote` on the Paper Pro)
 
 ```
 tap X Y [ms] | longpress X Y [ms] | swipe X1 Y1 X2 Y2 [ms]
@@ -40,7 +40,7 @@ raw pen|touch TYPE CODE VALUE
 ui <add-on command>
 ```
 
-## Add-on commands (`rmpp-remote ui <command>` on the tablet)
+## Add-on commands (`rmpp-remote ui <command>` on the Paper Pro)
 
 `ping`, `info`, `source [fb|window|screen]`, `epfb`, `load <exp.so> [arg]`, `shot [path.png] [gray]`, `rec start [dir] [fps] [gray]`, `rec mark <text>`, `rec stop`, `tree [depth]`,
 `find <query>`, `center <query>`, `hit X Y`, `prop <name> <query>`, `props <query>`, `text <utf8>`,

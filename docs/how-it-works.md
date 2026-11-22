@@ -14,7 +14,7 @@ Why these choices (measured on OS 3.29):
   is flipped, selection menus, dialogs). Frames are only written when the screen changed, so long recordings stay small.
 - **Input**: writing to the existing evdev nodes is simpler than uinput (xochitl keeps the nodes open and would have
   to discover a new device) and goes through xochitl's normal pen path (ink, lasso, palm rejection). Text goes
-  through the add-on because the tablet has no keyboard device unless a Type Folio is attached.
+  through the add-on because the Paper Pro has no keyboard device unless a Type Folio is attached.
 - **Coordinates**: the default screen-to-device maps (pen 11180x15340, touch 2064x2832 over 1620x2160) were checked
   with `pointers` (injected (200,1900) arrived at (200,1899)). If a future OS changes this, write
   `/home/root/.config/rmpp-remote/cal` with two lines `pen ax bx cx ay by cy` and `touch ...`

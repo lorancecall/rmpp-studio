@@ -13,7 +13,7 @@ the framebuffer is unknown and a shot falls back to one window grab. `ui source 
 ## History: the window grab froze the e-paper display
 
 
-Reproduced on 2026-11-11 in a controlled test (one capture process only, the developer using the tablet):
+Reproduced on 2026-11-11 in a controlled test (one capture process only, the developer using the Paper Pro):
 
 | Phase | Captures | Developer's input | Result |
 |---|---|---|---|
