@@ -18,14 +18,16 @@ Editing and exporting recordings works without a tablet; everything that looks a
 rmpp-remote on it.
 
 Tested on OS 3.29 (Qt 6.10). Needs developer mode (SSH as root) and
-[rmpp-preload](https://github.com/lorancecall/rmpp-packages) (loads `/usr/lib/rmpp-preload.d/*.so` into xochitl).
+[rmpp-preload](https://github.com/lorancecall/rmpp-packages) 0.2.0 or newer (install or update it with rmpp setup;
+it loads `/usr/lib/rmpp/preload.d/*.so` into xochitl). Like the rmpp packages, rmpp-remote keeps all its files under
+`/usr/lib/rmpp`; installing it moves an older `/usr/lib/rmpp-remote` (rmpp-studio 0.3.x) out of the way.
 
 ## How it works
 
 | Part | Where | What |
 |---|---|---|
-| `tablet/rmpp-remote.c` | `/usr/lib/rmpp-remote/rmpp-remote` | Writes `input_event`s straight into the digitizer nodes (`/dev/input/event2` "Elan marker input" = pen, `/dev/input/event3` "Elan touch input" = touch, multitouch protocol B). Writing to an evdev node injects the events into that device, so xochitl reads them like hardware input (no uinput device, nothing hot-plugged). Also the client for the add-on socket. |
-| `addon/remote.cpp` | `/usr/lib/rmpp-remote/librmpp-remote.so`, linked as `/usr/lib/rmpp-preload.d/40-rmpp-remote.so` | LD_PRELOAD add-on in xochitl. Listens on the abstract unix socket `@rmpp-remote`. `QQuickWindow::grabWindow()` for screenshots/frames (own 8-bit grayscale PNG encoder: xochitl's Qt ships no PNG writer plugin), item tree / search / hit test, `QInputMethodEvent` / `QKeyEvent` to the focused item, a log of the pointer events Qt received. |
+| `tablet/rmpp-remote.c` | `/usr/lib/rmpp/rmpp-remote/rmpp-remote` | Writes `input_event`s straight into the digitizer nodes (`/dev/input/event2` "Elan marker input" = pen, `/dev/input/event3` "Elan touch input" = touch, multitouch protocol B). Writing to an evdev node injects the events into that device, so xochitl reads them like hardware input (no uinput device, nothing hot-plugged). Also the client for the add-on socket. |
+| `addon/remote.cpp` | `/usr/lib/rmpp/rmpp-remote/librmpp-remote.so`, linked as `/usr/lib/rmpp/preload.d/40-rmpp-remote.so` | LD_PRELOAD add-on in xochitl. Listens on the abstract unix socket `@rmpp-remote`. `QQuickWindow::grabWindow()` for screenshots/frames (own 8-bit grayscale PNG encoder: xochitl's Qt ships no PNG writer plugin), item tree / search / hit test, `QInputMethodEvent` / `QKeyEvent` to the focused item, a log of the pointer events Qt received. |
 | `rmpp_ctl.py`, `rmpp-ctl.py` | PC (Python 3 + Pillow; ffmpeg for MP4) | Library + CLI and tutorial runner. One `ssh` call per command (~0.3 s). |
 | `rmpp-studio.pyw`, `studio/` | PC (PySide6) | GUI on top of `rmpp_ctl`. |
 
@@ -46,7 +48,7 @@ Why these choices (measured on OS 3.29):
 
 ```sh
 ./build.sh                 # cross-build with ../sdk (Arm GNU aarch64 + Qt 6.10 headers + device Qt libs)
-./deploy.sh rmpp           # copy to the tablet, link into rmpp-preload.d, restart xochitl
+./deploy.sh rmpp           # copy to the tablet, link into /usr/lib/rmpp/preload.d, restart xochitl
 ./deploy.sh rmpp --remove  # take it out again
 ```
 
