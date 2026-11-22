@@ -589,8 +589,8 @@ class Studio(QMainWindow):
             return
         if QMessageBox.question(self, "Install on the tablet", (
                 f"Install rmpp-remote {ctl.__version__} on {conn_label(self.conn)}?\n\nCopies the add-on to "
-                "/usr/lib/rmpp-remote, links it into rmpp-preload.d and restarts xochitl (the tablet may ask for "
-                "its passcode afterwards).")) != QMessageBox.StandardButton.Yes:
+                "/usr/lib/rmpp/rmpp-remote, links it into /usr/lib/rmpp/preload.d (rmpp-preload 0.2.0 or newer) and "
+                "restarts xochitl once (the tablet may ask for its passcode afterwards).")) != QMessageBox.StandardButton.Yes:
             return
         tab = self.tablet()
         self.jobs.run("install on tablet", lambda: ctl.install_tablet(tab, so, tool, log=print),

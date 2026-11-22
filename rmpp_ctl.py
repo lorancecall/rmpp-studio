@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """rmpp-ctl: drive and record a reMarkable Paper Pro from the PC over SSH.
 
-Needs the tablet parts from this repository (deploy.sh): /usr/lib/rmpp-remote/rmpp-remote (input injection and
+Needs the tablet parts from this repository (deploy.sh): /usr/lib/rmpp/rmpp-remote/rmpp-remote (input injection and
 add-on client) and librmpp-remote.so loaded in xochitl. Coordinates are xochitl screen pixels (portrait 1620 x 2160,
 origin top left), the same as in screenshots.
 
@@ -35,9 +35,12 @@ import tarfile
 import tempfile
 import time
 
-__version__ = "0.3.1"
+__version__ = "0.4.0"
 
-TOOL = "/usr/lib/rmpp-remote/rmpp-remote"
+# rmpp-preload 0.2+ layout: every rmpp file on the root file system lives under /usr/lib/rmpp
+RMPP = "/usr/lib/rmpp"
+TOOL = RMPP + "/rmpp-remote/rmpp-remote"
+OLD_TOOL = "/usr/lib/rmpp-remote/rmpp-remote"   # rmpp-studio 0.3.x installed it here
 REC_DIR = "/tmp/rmpp-remote/rec"
 W, H = 1620, 2160
 
@@ -122,19 +125,27 @@ class Tablet:
     def probe(self):
         """(ok, summary): can we log in, is rmpp-preload there, is the rmpp-remote add-on installed and loaded"""
         r = subprocess.run(["ssh"] + self.ssh_args() + [
-            "echo ssh-ok; uname -m; test -d /usr/lib/rmpp-preload.d && echo preload; "
-            f"test -x {TOOL} && echo tool; {TOOL} ui ping 2>/dev/null"],
+            f"echo ssh-ok; uname -m; test -x {RMPP}/launch && echo preload; "
+            "test -d /usr/lib/rmpp-preload.d && echo old-preload; "
+            f"test -x {TOOL} && echo tool; test -x {OLD_TOOL} && echo old-tool; {TOOL} ui ping 2>/dev/null"],
             capture_output=True, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         out = r.stdout.decode("utf-8", "replace").split()
         if "ssh-ok" not in out:
             err = r.stderr.decode("utf-8", "replace").strip().splitlines()
             return False, "SSH failed: " + (err[-1] if err else f"exit {r.returncode}")
         arch = out[1] if len(out) > 1 else "?"
-        parts = [f"SSH ok ({arch})", "rmpp-preload: " + ("yes" if "preload" in out else "NOT installed")]
+        if "preload" in out:
+            parts = [f"SSH ok ({arch})", "rmpp-preload: yes"]
+        elif "old-preload" in out:
+            parts = [f"SSH ok ({arch})", "rmpp-preload: old version (update to 0.2.0+ with rmpp setup)"]
+        else:
+            parts = [f"SSH ok ({arch})", "rmpp-preload: NOT installed (rmpp setup)"]
         if "ok" in out:
             parts.append("rmpp-remote: running")
         elif "tool" in out:
             parts.append("rmpp-remote: installed, not loaded (restart xochitl)")
+        elif "old-tool" in out:
+            parts.append("rmpp-remote: old location (Tablet > Install to update)")
         else:
             parts.append("rmpp-remote: not installed (Tablet > Install)")
         return True, " | ".join(parts)
@@ -669,31 +680,51 @@ def save_recording(tab, out, state):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+# Installs into rmpp-preload 0.2+'s layout: /usr/lib/rmpp/rmpp-remote, linked as /usr/lib/rmpp/preload.d/40-rmpp-remote.so.
+# Like the rmpp packages: a file xochitl may have loaded is renamed to *.old or moved to /usr/lib/rmpp/.trash, never
+# deleted, and /usr/lib/rmpp/restart restarts xochitl once and deletes them afterwards. Never `systemctl stop xochitl`.
+PREPARE_OLD = """for o in /usr/lib/rmpp-remote /usr/lib/rmpp-tester; do   # rmpp-studio 0.3.x and its old name
+    [ ! -e $o ] || { mkdir -p $P/.trash && mv $o $P/.trash/$(echo ${o#/} | tr / _).$$; }
+done
+rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
+rmdir /usr/lib/rmpp-preload.d 2>/dev/null || true
+"""
+
+RESTART = """sync
+mount -o remount,ro / 2>/dev/null || true   # busy while xochitl holds a replaced library: restart does it
+if [ -x $P/restart ]; then $P/restart; else systemctl reset-failed xochitl; systemctl restart xochitl; sleep 3; fi
+"""
+
 INSTALL_SCRIPT = """set -e
-D=/usr/lib/rmpp-remote
+P=/usr/lib/rmpp
+D=$P/rmpp-remote
 N=/tmp/rmpp-remote-new
+[ -x $P/launch ] || { echo "rmpp-preload 0.2.0 or newer is needed (/usr/lib/rmpp/launch missing)"; exit 3; }
 mount -o remount,rw /
-mkdir -p $D
-for f in librmpp-remote.so rmpp-remote; do cp $N/$f $D/$f.new; chmod 755 $D/$f.new; mv $D/$f.new $D/$f; done
+""" + PREPARE_OLD + """mkdir -p $D $P/preload.d
+for f in librmpp-remote.so rmpp-remote; do
+    cp $N/$f $D/$f.new && chmod 755 $D/$f.new
+    [ ! -e $D/$f ] || mv -f $D/$f $D/$f.old
+    mv -f $D/$f.new $D/$f
+done
+ln -sfn ../rmpp-remote/librmpp-remote.so $P/preload.d/40-rmpp-remote.so
 rm -rf $N
-ln -sf $D/librmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-remote.so
-rm -f /usr/lib/rmpp-preload.d/40-rmpp-tester.so; rm -rf /usr/lib/rmpp-tester   # its old name
-sync
-systemctl reset-failed xochitl; systemctl restart xochitl
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do sleep 1; $D/rmpp-remote ui ping >/dev/null 2>&1 && break; done
-P=$(pidof rmpp-remote); [ -n "$P" ] && kill $P; sleep 1
-mount -o remount,ro / || echo "warning: / is still read-write"
+""" + RESTART + """for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do sleep 1; $D/rmpp-remote ui ping >/dev/null 2>&1 && break; done
+P2=$(pidof rmpp-remote) || true; [ -z "$P2" ] || kill $P2   # a pointer stream (watch) keeps the old binary open
+grep -q ' / [^ ]* rw[ ,]' /proc/mounts && { sleep 1; mount -o remount,ro / || echo "warning: / is still read-write"; }
 $D/rmpp-remote ui info
 """
 
-REMOVE_SCRIPT = """mount -o remount,rw /
-rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so
-rm -rf /usr/lib/rmpp-remote
-rm -f /usr/lib/rmpp-preload.d/40-rmpp-tester.so; rm -rf /usr/lib/rmpp-tester
-sync
-systemctl reset-failed xochitl; systemctl restart xochitl
-sleep 5
-mount -o remount,ro / || echo "warning: / is still read-write"
+REMOVE_SCRIPT = """P=/usr/lib/rmpp
+mount -o remount,rw /
+rm -f $P/preload.d/40-rmpp-remote.so
+if [ -d $P ]; then
+""" + PREPARE_OLD + """    [ ! -e $P/rmpp-remote ] || { mkdir -p $P/.trash && mv $P/rmpp-remote $P/.trash/rmpp-remote.$$; }
+else   # no rmpp-preload 0.2: the old layout only
+    rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
+    rm -rf /usr/lib/rmpp-remote /usr/lib/rmpp-tester
+fi
+""" + RESTART + """grep -q ' / [^ ]* rw[ ,]' /proc/mounts && { mount -o remount,ro / || echo "warning: / is still read-write"; }
 echo removed
 """
 
@@ -705,9 +736,11 @@ def recent_restarts(tab):
 
 
 def install_tablet(tab, so_path, bin_path, log=print):
-    """Copy the add-on and the tablet tool to /usr/lib/rmpp-remote, link it into rmpp-preload.d, restart xochitl."""
-    if not tab.ssh("ls /usr/lib/rmpp-preload.d >/dev/null 2>&1 && echo ok", check=False).strip() == "ok":
-        raise SystemExit("rmpp-preload is not installed on the tablet (/usr/lib/rmpp-preload.d missing)")
+    """Copy the add-on and the tablet tool to /usr/lib/rmpp/rmpp-remote, link it into /usr/lib/rmpp/preload.d, move
+    an older install (/usr/lib/rmpp-remote) out of the way and restart xochitl once."""
+    if tab.ssh(f"test -x {RMPP}/launch && echo ok", check=False).strip() != "ok":
+        raise SystemExit("rmpp-preload 0.2.0 or newer is not installed on the tablet (/usr/lib/rmpp/launch missing): "
+                         "install or update it with rmpp setup, https://github.com/lorancecall/rmpp-packages")
     if recent_restarts(tab) >= 3:
         raise SystemExit("xochitl restarted 3+ times in the last 10 minutes; wait a few minutes (it reboots after 4)")
     tab.ssh("rm -rf /tmp/rmpp-remote-new && mkdir -p /tmp/rmpp-remote-new")
