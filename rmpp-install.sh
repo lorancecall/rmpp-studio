@@ -25,6 +25,10 @@ for f in librmpp-remote.so rmpp-remote; do
 		mv -f "$D/$f.new" "$D/$f"
 done
 ln -sfn ../rmpp-remote/librmpp-remote.so "$P/preload.d/40-rmpp-remote.so"
+# running rmpp-remote programs (rmpp-studio's pointer stream) still run the old binary: while they hold the deleted
+# *.old file, / cannot go back to read-only after the restart. rmpp-studio reconnects by itself.
+R=$(pidof rmpp-remote) || true
+[ -z "$R" ] || kill $R 2>/dev/null || true
 sync
 mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
 # never `systemctl stop xochitl` (it powers the tablet off). Share one xochitl restart with the Vellum packages
