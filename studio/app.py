@@ -594,9 +594,11 @@ class Studio(QMainWindow):
             QMessageBox.critical(self, "Install", f"tablet files not found in {TABLET_BIN}")
             return
         if QMessageBox.question(self, "Install on the tablet", (
-                f"Install rmpp-remote {ctl.__version__} on {conn_label(self.conn)}?\n\nCopies the add-on to "
-                "/usr/lib/rmpp/rmpp-remote, links it into /usr/lib/rmpp/preload.d (rmpp-preload 0.2.0 or newer) and "
-                "restarts xochitl once (the tablet may ask for its passcode afterwards).")) != QMessageBox.StandardButton.Yes:
+                f"Install or update rmpp-remote on {conn_label(self.conn)}?\n\nWith Vellum and the rmpp package "
+                "repository on the tablet (rmpp setup sets them up) this installs the Vellum package rmpp-remote, so "
+                "Restore in rmpp setup brings it back after an OS update. Otherwise it copies this app's files "
+                f"(rmpp-remote {ctl.__version__}) to /usr/lib/rmpp/rmpp-remote. Needs rmpp-preload 0.2.0 or newer; "
+                "xochitl restarts once (the tablet may ask for its passcode afterwards).")) != QMessageBox.StandardButton.Yes:
             return
         tab = self.tablet()
         self.jobs.run("install on tablet", lambda: ctl.install_tablet(tab, so, tool, log=print),

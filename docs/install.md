@@ -9,25 +9,30 @@ the same for every rmpp add-on live in rmpp-packages and are linked here, not re
 
 | Part | How it is installed | Installs with it |
 |---|---|---|
-| rmpp-remote (Paper Pro) | rmpp setup, from this project's latest release: not a Vellum package yet | needs `rmpp-preload` (rmpp setup installs it first) |
+| `rmpp-remote` (Paper Pro) | rmpp setup, or `vellum add rmpp-remote` | `rmpp-preload` |
 | rmpp-studio, rmpp-ctl (computer) | the release files below | - |
 
 All packages and what needs what: [packages.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md).
 
 ## Without rmpp setup
 
-- **From the app:** Tablet > Install / update rmpp-remote copies the Paper Pro files bundled with the app and restarts
-  xochitl (it refuses after 3 restarts in 10 minutes). It needs `rmpp-preload` 0.2.0 or newer on the Paper Pro:
-  `vellum add rmpp-preload` after [manual-install.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/manual-install.md) steps 1-2, or rmpp setup.
-- **By hand:** `./deploy.sh rmpp` from a checkout ([below](#build-and-install-by-hand)).
+- **Vellum:** [manual-install.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/manual-install.md)
+  (Vellum and the rmpp package repository), then on the Paper Pro `vellum add rmpp-remote`.
+- **From the app:** Tablet > Install / update rmpp-remote does the same (`vellum add`, or `vellum upgrade` when it is
+  installed) when Vellum and the rmpp package repository are on the Paper Pro. Without them it copies the files
+  bundled with the app instead, which Vellum does not track (Restore does not bring them back). It refuses after 3
+  xochitl restarts in 10 minutes and needs `rmpp-preload` 0.2.0 or newer.
+- **By hand:** `./deploy.sh rmpp` from a checkout ([below](#build-and-install-by-hand)), for development; Vellum does
+  not track it either.
 
 Every way puts the add-on in `/usr/lib/rmpp/rmpp-remote` with the link `/usr/lib/rmpp/preload.d/40-rmpp-remote.so`
 and moves an older `/usr/lib/rmpp-remote` (rmpp-studio 0.3.x) out of the way.
 
 ## Uninstall
 
-- **Just rmpp-remote:** `./deploy.sh rmpp --remove` from a checkout. rmpp setup removes it only with **Remove
-  everything** (it is not a Vellum package yet).
+- **Just rmpp-remote:** untick it in rmpp setup and press **Remove unticked installed**, or `vellum del rmpp-remote`
+  on the Paper Pro, or Tablet > Remove rmpp-remote in the app. A copy the app or `./deploy.sh` made without Vellum:
+  Tablet > Remove in the app, or `./deploy.sh rmpp --remove`.
 - **What stays:** the optional calibration file `/home/root/.config/rmpp-remote/cal`, if you made one.
 - **The app:** uninstall it like any app (Windows: Settings > Apps; Linux: your package manager; macOS: move it to
   the Trash). Recordings stay in `Documents\rmpp-studio`.
