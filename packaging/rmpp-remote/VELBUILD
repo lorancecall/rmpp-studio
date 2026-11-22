@@ -1,0 +1,128 @@
+maintainer="lorancecall <84116812+lorancecall@users.noreply.github.com>"
+pkgname=rmpp-remote
+pkgver=0.4.1
+pkgrel=2
+upstream_author="lorancecall"
+category="utility"
+pkgdesc="rmpp-studio's Paper Pro part: screen capture, recording, UI lookup, text, pen and touch input for rmpp-studio on a computer"
+url="https://github.com/lorancecall/rmpp-studio"
+arch="aarch64"
+license="GPL-3.0-only"
+depends="rmpp-preload>=0.2.0 !rm1 !rm2 mount-utils remarkable-os>=3.29 remarkable-os<3.30"
+source="
+https://github.com/$upstream_author/rmpp-studio/releases/download/v$pkgver/librmpp-remote.so
+https://github.com/$upstream_author/rmpp-studio/releases/download/v$pkgver/rmpp-remote
+https://raw.githubusercontent.com/$upstream_author/rmpp-studio/v$pkgver/LICENSE
+"
+options="!check !fhs !strip"
+
+# Each lifecycle function runs as its own script: no shared helpers, every step is written out.
+# Never `systemctl stop xochitl`: that powers the Paper Pro off. Scripts never restart xochitl themselves: they re-arm
+# the transient timer rmpp-restart-xochitl (15 s, runs /usr/lib/rmpp/restart), so a transaction restarts it once.
+# Root file system: everything under /usr/lib/rmpp (rmpp-preload's layout, the same as rmpp-studio's Tablet >
+# Install and the former rmpp-install.sh, so this package takes over such an install); a file in use is renamed to
+# *.old or moved to /usr/lib/rmpp/.trash, never deleted, and /usr/lib/rmpp/restart deletes it after the restart.
+# Plain `mount -o remount,rw|ro /`: Vellum's mount-rw unmounts /etc recursively, which also drops the
+# /etc/dropbear bind mount (SSH host key) until the next boot.
+
+package() {
+	install -Dm755 "$srcdir"/librmpp-remote.so "$pkgdir"/home/root/.vellum/share/rmpp-remote/librmpp-remote.so
+	install -Dm755 "$srcdir"/rmpp-remote "$pkgdir"/home/root/.vellum/share/rmpp-remote/rmpp-remote
+
+	install -Dm644 "$srcdir"/LICENSE "$pkgdir"/home/root/.vellum/licenses/$pkgname/LICENSE
+	echo "https://github.com/$upstream_author/rmpp-studio" > "$pkgdir"/home/root/.vellum/licenses/$pkgname/SOURCES
+}
+
+postinstall() {
+	mount -o remount,rw /
+	# rmpp-studio 0.3.x (and its old name rmpp-tester) installed to /usr/lib: set aside (deleted after the restart)
+	if [ -e /usr/lib/rmpp-remote ]; then
+		mkdir -p /usr/lib/rmpp/.trash
+		mv /usr/lib/rmpp-remote /usr/lib/rmpp/.trash/usr_lib_rmpp-remote.$$
+	fi
+	if [ -e /usr/lib/rmpp-tester ]; then
+		mkdir -p /usr/lib/rmpp/.trash
+		mv /usr/lib/rmpp-tester /usr/lib/rmpp/.trash/usr_lib_rmpp-tester.$$
+	fi
+	rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
+	rmdir /usr/lib/rmpp-preload.d 2>/dev/null || true
+	mkdir -p /usr/lib/rmpp/rmpp-remote /usr/lib/rmpp/preload.d
+	cp /home/root/.vellum/share/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && chmod 755 /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/librmpp-remote.so ] || mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.old; } && mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new /usr/lib/rmpp/rmpp-remote/librmpp-remote.so
+	cp /home/root/.vellum/share/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && chmod 755 /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/rmpp-remote ] || mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.old; } && mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote.new /usr/lib/rmpp/rmpp-remote/rmpp-remote
+	ln -sfn ../rmpp-remote/librmpp-remote.so /usr/lib/rmpp/preload.d/40-rmpp-remote.so
+	# running rmpp-remote programs (rmpp-studio's pointer stream) keep the old binary open: stop them, rmpp-studio
+	# reconnects by itself
+	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
+	sync
+	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
+		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
+}
+
+postupgrade() {
+	mount -o remount,rw /
+	# rmpp-studio 0.3.x (and its old name rmpp-tester) installed to /usr/lib: set aside (deleted after the restart)
+	if [ -e /usr/lib/rmpp-remote ]; then
+		mkdir -p /usr/lib/rmpp/.trash
+		mv /usr/lib/rmpp-remote /usr/lib/rmpp/.trash/usr_lib_rmpp-remote.$$
+	fi
+	if [ -e /usr/lib/rmpp-tester ]; then
+		mkdir -p /usr/lib/rmpp/.trash
+		mv /usr/lib/rmpp-tester /usr/lib/rmpp/.trash/usr_lib_rmpp-tester.$$
+	fi
+	rm -f /usr/lib/rmpp-preload.d/40-rmpp-remote.so /usr/lib/rmpp-preload.d/40-rmpp-tester.so
+	rmdir /usr/lib/rmpp-preload.d 2>/dev/null || true
+	mkdir -p /usr/lib/rmpp/rmpp-remote /usr/lib/rmpp/preload.d
+	cp /home/root/.vellum/share/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && chmod 755 /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/librmpp-remote.so ] || mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.old; } && mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new /usr/lib/rmpp/rmpp-remote/librmpp-remote.so
+	cp /home/root/.vellum/share/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && chmod 755 /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/rmpp-remote ] || mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.old; } && mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote.new /usr/lib/rmpp/rmpp-remote/rmpp-remote
+	ln -sfn ../rmpp-remote/librmpp-remote.so /usr/lib/rmpp/preload.d/40-rmpp-remote.so
+	# running rmpp-remote programs (rmpp-studio's pointer stream) keep the old binary open: stop them, rmpp-studio
+	# reconnects by itself
+	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
+	sync
+	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
+		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
+}
+
+# `vellum reenable` after an OS update: the root file system is already writable here; rmpp-preload's
+# postosupgrade restarts xochitl, which runs the boot hooks again.
+postosupgrade() {
+	mkdir -p /usr/lib/rmpp/rmpp-remote /usr/lib/rmpp/preload.d
+	cp /home/root/.vellum/share/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && chmod 755 /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/librmpp-remote.so ] || mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.old; } && mv -f /usr/lib/rmpp/rmpp-remote/librmpp-remote.so.new /usr/lib/rmpp/rmpp-remote/librmpp-remote.so
+	cp /home/root/.vellum/share/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && chmod 755 /usr/lib/rmpp/rmpp-remote/rmpp-remote.new && { [ ! -e /usr/lib/rmpp/rmpp-remote/rmpp-remote ] || mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote /usr/lib/rmpp/rmpp-remote/rmpp-remote.old; } && mv -f /usr/lib/rmpp/rmpp-remote/rmpp-remote.new /usr/lib/rmpp/rmpp-remote/rmpp-remote
+	ln -sfn ../rmpp-remote/librmpp-remote.so /usr/lib/rmpp/preload.d/40-rmpp-remote.so
+	sync
+}
+
+predeinstall() {
+	mount -o remount,rw /
+	mkdir -p /usr/lib/rmpp/.trash
+	rm -f /usr/lib/rmpp/preload.d/40-rmpp-remote.so
+	[ ! -e /usr/lib/rmpp/rmpp-remote ] || mv /usr/lib/rmpp/rmpp-remote /usr/lib/rmpp/.trash/rmpp-remote.$$
+	# running rmpp-remote programs (rmpp-studio's pointer stream) keep the old binary open: stop them, rmpp-studio
+	# reconnects by itself
+	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
+	sync
+	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
+		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
+	# `vellum purge` (rmpp setup: "Also delete their settings and data"): settings and data in /home too
+	if [ "$VELLUM_PURGE" = "1" ]; then
+		rm -rf /home/root/.config/rmpp-remote /home/root/.local/share/rmpp-remote
+	fi
+}
+sha512sums="
+5900fb39511f15f8a3e570564c240f84b938891d3e48c5e6327a3b2d35cc360853be28145aa68df150008f38f6166c1bb07023984a96ee30d78bcb0602f03526  librmpp-remote.so
+d581d71b947bad0fb8695261c5d9f70be36993b8a365a294a60089cb0c3df45611efc39161d90d963697a6e1b7cb8ee62120fab9b8ad9ec13219687bb1164832  rmpp-remote
+900ef9b1d0e1435fb3aad32f035edf8890538292ebb3104af2feb386fb25df134ed0172a0ec542b2c25ff69a39ae62b34ad17e01b3522067a7328abb25aa4fff  LICENSE
+"
