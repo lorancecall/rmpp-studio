@@ -1,11 +1,11 @@
 # rmpp-studio, the app
 
-A small video editor for tablet tutorials (PySide6 / Qt 6; Windows, macOS and Linux, each release file bundles
+A small video editor for Paper Pro tutorials (PySide6 / Qt 6; Windows, macOS and Linux, each release file bundles
 everything).
 
 | Area | What |
 |---|---|
-| **LIVE** (left monitor) | The tablet screen (in color, refreshed every second with **Live**, copied from xochitl's framebuffer so it cannot stall the display). Click = tap, hold = long press, drag = swipe; **Pen** mode: drag = pen stroke; **Look** mode or right click = list the UI items there. **⌨ Keyboard**: what you type goes to the text field focused on the tablet (tap one first): letters and Korean or other input methods (sent when a character is complete), Enter, Backspace, Delete, Tab, Escape, arrows, Home / End, Ctrl+A / C / V / X / Z / Y; one SSH connection for all keys. **Pointer** draws where the real pen (hover ring, pressure dot, stroke trail) and fingers are. |
+| **LIVE** (left monitor) | The Paper Pro screen (in color, refreshed every second with **Live**, copied from xochitl's framebuffer so it cannot stall the display). Click = tap, hold = long press, drag = swipe; **Pen** mode: drag = pen stroke; **Look** mode or right click = list the UI items there. **⌨ Keyboard**: what you type goes to the text field focused on the Paper Pro (tap one first): letters and Korean or other input methods (sent when a character is complete), Enter, Backspace, Delete, Tab, Escape, arrows, Home / End, Ctrl+A / C / V / X / Z / Y; one SSH connection for all keys. **Pointer** draws where the real pen (hover ring, pressure dot, stroke trail) and fingers are. |
 | **PREVIEW** (right monitor) | The selected recording as it will be exported (clips, shortened pauses, captions). ⏮ ◀◀ ▶/⏸ ▶▶ ⏭ (Space, ←/→ = previous/next change, Home/End). |
 | **Clips + timeline** | The recording is cut into clips that play in order: **✂ Split** at the playhead (S), **[ In / Out ]** to trim the clip under the playhead (I / O), **⧉ Duplicate** (Ctrl+D, or Ctrl+C / Ctrl+V), **🗑 Delete** (Delete; the recording keeps the frames), **↶ Undo / ↷ Redo** (Ctrl+Z / Ctrl+Shift+Z), **⟲ Reset**. Drag a clip to move it, drag its edges to trim. Thumbnails show where the screen changed; captions belong to the recording time, so they move with their clip (drag to move, double click to edit). Ctrl+wheel zooms, wheel scrolls. |
 | **Recordings** (left) | Your recordings with thumbnails; rename, delete, open the folder. |

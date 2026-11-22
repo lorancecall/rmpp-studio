@@ -12,7 +12,7 @@ rmpp-ctl run tutorials/lasso-move.tut -o out/demo.gif,out/demo.mp4 --keep-frames
 |---|---|
 | `# ...` | comment |
 | `title: ...`, `output: path.gif` | name, default output (comma separated for several formats) |
-| `fps: 4` | capture rate on the tablet (frames are only stored when the screen changed) |
+| `fps: 4` | capture rate on the Paper Pro (frames are only stored when the screen changed) |
 | `out-fps: 8`, `scale: 0.5` | output frame rate and size (0.5 = 810 x 1080) |
 | `setup <command>` | runs before recording starts (open the right notebook, pick a tool, clean the page) |
 | `open "<notebook>"` | close the open document and open this notebook from My files (start every tutorial with it) |

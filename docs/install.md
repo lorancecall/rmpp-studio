@@ -1,7 +1,7 @@
 # Installing rmpp-studio
 
 The usual way: the app from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest), and the
-tablet part rmpp-remote from **rmpp setup** ([rmpp-packages](https://github.com/lorancecall/rmpp-packages#install)),
+Paper Pro part rmpp-remote from **rmpp setup** ([rmpp-packages](https://github.com/lorancecall/rmpp-packages#install)),
 as the desktop app or the script: tick **Remote control for rmpp-studio**. This page covers the rest. Steps that are
 the same for every rmpp add-on live in rmpp-packages and are linked here, not repeated.
 
@@ -9,15 +9,15 @@ the same for every rmpp add-on live in rmpp-packages and are linked here, not re
 
 | Part | How it is installed | Installs with it |
 |---|---|---|
-| rmpp-remote (tablet) | rmpp setup, from this project's latest release: not a Vellum package yet | needs `rmpp-preload` (rmpp setup installs it first) |
+| rmpp-remote (Paper Pro) | rmpp setup, from this project's latest release: not a Vellum package yet | needs `rmpp-preload` (rmpp setup installs it first) |
 | rmpp-studio, rmpp-ctl (computer) | the release files below | - |
 
 All packages and what needs what: [packages.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md).
 
 ## Without rmpp setup
 
-- **From the app:** Tablet > Install / update rmpp-remote copies the tablet files bundled with the app and restarts
-  xochitl (it refuses after 3 restarts in 10 minutes). It needs `rmpp-preload` 0.2.0 or newer on the tablet:
+- **From the app:** Tablet > Install / update rmpp-remote copies the Paper Pro files bundled with the app and restarts
+  xochitl (it refuses after 3 restarts in 10 minutes). It needs `rmpp-preload` 0.2.0 or newer on the Paper Pro:
   `vellum add rmpp-preload` after [manual-install.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/manual-install.md) steps 1-2, or rmpp setup.
 - **By hand:** `./deploy.sh rmpp` from a checkout ([below](#build-and-install-by-hand)).
 
@@ -30,7 +30,7 @@ and moves an older `/usr/lib/rmpp-remote` (rmpp-studio 0.3.x) out of the way.
   everything** (it is not a Vellum package yet).
 - **What stays:** the optional calibration file `/home/root/.config/rmpp-remote/cal`, if you made one.
 - **The app:** uninstall it like any app (Windows: Settings > Apps; Linux: your package manager; macOS: move it to
-  the Trash). Recordings stay in `Documentsmpp-studio`.
+  the Trash). Recordings stay in `Documents\rmpp-studio`.
 - **Everything rmpp, and before a factory reset:** [uninstall.md](https://github.com/lorancecall/rmpp-packages/blob/main/docs/uninstall.md).
 
 ## Next to other mods
@@ -67,14 +67,14 @@ It injects input as a real pen and finger, so do not run two remote-control tool
 rmpp-studio.cmd              # Windows; elsewhere: python3 rmpp-studio.pyw
 ```
 
-On first start a **connection dialog** asks how to reach the tablet (later: **Connection...** or Tablet > Connection): pick a profile from `~/.ssh/config` (tablet-looking ones first), or enter host / port / user / key directly (**USB cable** fills in 10.11.99.1). **Set up key login** creates a key (`~/.ssh/id_ed25519_rmpp_studio`) and appends it to the tablet's `authorized_keys`; the root password is typed into ssh's own console window, never into rmpp-studio. **Test connection** checks SSH, rmpp-preload and the add-on.
+On first start a **connection dialog** asks how to reach the Paper Pro (later: **Connection...** or Tablet > Connection): pick a profile from `~/.ssh/config` (ones that look like a Paper Pro first), or enter host / port / user / key directly (**USB cable** fills in 10.11.99.1). **Set up key login** creates a key (`~/.ssh/id_ed25519_rmpp_studio`) and appends it to the Paper Pro's `authorized_keys`; the root password is typed into ssh's own console window, never into rmpp-studio. **Test connection** checks SSH, rmpp-preload and the add-on.
 
-The installed app needs only Windows' own OpenSSH client (`ssh` with a key for the tablet in `~/.ssh`) and, for MP4,
+The installed app needs only Windows' own OpenSSH client (`ssh` with a key for the Paper Pro in `~/.ssh`) and, for MP4,
 ffmpeg (`winget install Gyan.FFmpeg`). **Tablet > Install / update rmpp-remote on the tablet** copies the bundled
-tablet add-on and tool and restarts xochitl (it refuses after 3 restarts in 10 minutes). User files go to
+Paper Pro add-on and tool and restarts xochitl (it refuses after 3 restarts in 10 minutes). User files go to
 `Documents\rmpp-studio` (`recordings`, `out`, `tutorials`, with the example tutorial copied there on first start).
 
-Build the installer (Python with Pillow + PySide6 + PyInstaller, Inno Setup 6, tablet binaries from `./build.sh`):
+Build the installer (Python with Pillow + PySide6 + PyInstaller, Inno Setup 6, Paper Pro binaries from `./build.sh`):
 
 ```sh
 powershell -ExecutionPolicy Bypass -File windows/build.ps1   # -> dist/rmpp-studio-setup-<version>.exe
@@ -82,16 +82,16 @@ powershell -ExecutionPolicy Bypass -File windows/build.ps1   # -> dist/rmpp-stud
 
 The icon is drawn by `windows/make_icon.py`. The Linux and macOS release files are built by GitHub Actions
 (`.github/workflows/build.yml`: `unix/build.sh`, then `unix/package-linux.sh` / `unix/package-macos.sh`, then
-`unix/smoke-test.sh` in Ubuntu, Debian, Fedora, Rocky, openSUSE and Arch containers); it takes the tablet binaries
+`unix/smoke-test.sh` in Ubuntu, Debian, Fedora, Rocky, openSUSE and Arch containers); it takes the Paper Pro binaries
 from the draft release and uploads its files there.
 
 ## Build and install by hand
 
 ```sh
 ./build.sh                 # cross-build with ../sdk (Arm GNU aarch64 + Qt 6.10 headers + device Qt libs)
-./deploy.sh rmpp           # copy to the tablet, link into /usr/lib/rmpp/preload.d, restart xochitl
+./deploy.sh rmpp           # copy to the Paper Pro, link into /usr/lib/rmpp/preload.d, restart xochitl
 ./deploy.sh rmpp --remove  # take it out again
 ```
 
-`deploy.sh` restarts xochitl (after `systemctl reset-failed`; xochitl reboots the tablet after more than 4
-restarts in 10 minutes). A restart locks the tablet when a passcode is set: unlock it by hand.
+`deploy.sh` restarts xochitl (after `systemctl reset-failed`; xochitl reboots the Paper Pro after more than 4
+restarts in 10 minutes). A restart locks the Paper Pro when a passcode is set: unlock it by hand.
