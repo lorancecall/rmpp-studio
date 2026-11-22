@@ -33,8 +33,7 @@ has **rmpp setup**, the installer for all rmpp add-ons, including rmpp-studio's 
 - The app on your computer, from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest):
   Windows `rmpp-studio-setup-<version>.exe`; Linux `.deb`, `.rpm`, `.AppImage` or `.tar.gz`; macOS `.dmg` (not
   notarized: right click > Open the first time). Its connection dialog finds the Paper Pro (**USB cable** = 10.11.99.1).
-- After a reMarkable OS update: **Restore** in rmpp setup, then install rmpp-remote again (it is not a Vellum
-  package yet, so Restore does not bring it back): Install in rmpp setup, or Tablet > Install in the app.
+- After a reMarkable OS update: **Restore** in rmpp setup.
 - Without rmpp setup, removing it, next to other mods, `rmpp-ctl`, from source, building:
   [docs/install.md](docs/install.md).
 
