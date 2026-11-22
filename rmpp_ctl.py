@@ -41,6 +41,7 @@ __version__ = "0.4.1"
 RMPP = "/usr/lib/rmpp"
 TOOL = RMPP + "/rmpp-remote/rmpp-remote"
 OLD_TOOL = "/usr/lib/rmpp-remote/rmpp-remote"   # rmpp-studio 0.3.x installed it here
+VELLUM = "/home/root/.vellum/bin/vellum"   # the rmpp-remote Vellum package comes from the rmpp package repository
 REC_DIR = "/tmp/rmpp-remote/rec"
 W, H = 1620, 2160
 
@@ -767,14 +768,47 @@ def recent_restarts(tab):
     return int(out) if out.isdigit() else 0
 
 
+def vellum_package(tab):
+    """'installed', 'available' or None: the rmpp-remote Vellum package on the tablet (rmpp package repository,
+    https://github.com/lorancecall/rmpp-packages). Refreshes the index once when the package is not listed."""
+    q = f"{VELLUM} list 2>/dev/null | grep '^rmpp-remote-[0-9]'"
+    out = tab.ssh(f"[ -x {VELLUM} ] || exit 0; {q} || {{ {VELLUM} update >/dev/null 2>&1; {q}; }}", check=False)
+    if "[installed]" in out:
+        return "installed"
+    return "available" if out.strip() else None
+
+
+VELLUM_SCRIPT = f"""set -e
+V={VELLUM}
+before=$($V list 2>/dev/null | grep '^rmpp-remote-[0-9].*installed' || true)
+if [ -n "$before" ]; then $V upgrade -y rmpp-remote; else $V add rmpp-remote; fi
+after=$($V list 2>/dev/null | grep '^rmpp-remote-[0-9].*installed' || true)
+[ -n "$after" ] || {{ echo "rmpp-remote is not installed"; exit 1; }}
+if [ "$after" = "$before" ]; then echo "rmpp-remote is up to date"; else
+    echo "${{after%% *}} installed; xochitl restarts in about 15 seconds"
+    sleep 17   # the packages restart xochitl once, 15 s after the transaction
+fi
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do {TOOL} ui ping >/dev/null 2>&1 && break; sleep 1; done
+{TOOL} ui info
+"""
+
+
 def install_tablet(tab, so_path, bin_path, log=print):
-    """Copy the add-on and the tablet tool to /usr/lib/rmpp/rmpp-remote, link it into /usr/lib/rmpp/preload.d, move
-    an older install (/usr/lib/rmpp-remote) out of the way and restart xochitl once."""
+    """Install or update rmpp-remote. With Vellum and the rmpp package repository on the tablet (rmpp setup sets them
+    up), as the Vellum package rmpp-remote, so Restore (`vellum reenable`) brings it back after an OS update and
+    `vellum del` removes it. Otherwise copy the app's own files: /usr/lib/rmpp/rmpp-remote, linked into
+    /usr/lib/rmpp/preload.d, move an older install (/usr/lib/rmpp-remote) out of the way and restart xochitl once."""
     if tab.ssh(f"test -x {RMPP}/launch && echo ok", check=False).strip() != "ok":
         raise SystemExit("rmpp-preload 0.2.0 or newer is not installed on the tablet (/usr/lib/rmpp/launch missing): "
                          "install or update it with rmpp setup, https://github.com/lorancecall/rmpp-packages")
     if recent_restarts(tab) >= 3:
         raise SystemExit("xochitl restarted 3+ times in the last 10 minutes; wait a few minutes (it reboots after 4)")
+    if vellum_package(tab):
+        log("installing / updating the Vellum package rmpp-remote; xochitl restarts if it changes (the tablet may "
+            "ask for its passcode) ...")
+        return tab.ssh("sh -s", data=VELLUM_SCRIPT.encode())
+    log("no Vellum package rmpp-remote on the tablet (Vellum or the rmpp package repository missing): copying the "
+        "app's files; Vellum does not track this install")
     tab.ssh("rm -rf /tmp/rmpp-remote-new && mkdir -p /tmp/rmpp-remote-new")
     for src, name in ((so_path, "librmpp-remote.so"), (bin_path, "rmpp-remote")):
         with open(src, "rb") as f:
@@ -785,8 +819,11 @@ def install_tablet(tab, so_path, bin_path, log=print):
 
 
 def remove_tablet(tab):
+    """`vellum del rmpp-remote` when it is the Vellum package, otherwise remove the copied files."""
     if recent_restarts(tab) >= 3:
         raise SystemExit("xochitl restarted 3+ times in the last 10 minutes; wait a few minutes (it reboots after 4)")
+    if vellum_package(tab) == "installed":
+        return tab.ssh(f"{VELLUM} del rmpp-remote && echo 'removed (xochitl restarts in about 15 seconds)'")
     return tab.ssh("sh -s", data=REMOVE_SCRIPT.encode())
 
 
