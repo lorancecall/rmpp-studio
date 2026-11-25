@@ -35,7 +35,7 @@ import tarfile
 import tempfile
 import time
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 # rmpp-preload 0.2+ layout: every rmpp file on the root file system lives under /usr/lib/rmpp
 RMPP = "/usr/lib/rmpp"

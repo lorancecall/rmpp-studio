@@ -1,7 +1,7 @@
 maintainer="lorancecall <84116812+lorancecall@users.noreply.github.com>"
 pkgname=rmpp-remote
-pkgver=0.4.1
-pkgrel=3
+pkgver=0.4.2
+pkgrel=0
 upstream_author="lorancecall"
 category="utility"
 pkgdesc="rmpp-studio's Paper Pro part: screen capture, recording, UI lookup, text, pen and touch input for rmpp-studio on a computer"
