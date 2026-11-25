@@ -9,8 +9,8 @@ Record, edit and export tutorials for the reMarkable Paper Pro, and drive the Pa
 script, or by an AI agent). Editing and exporting recordings works without a Paper Pro; everything that looks at or
 touches the Paper Pro needs rmpp-remote on it.
 
-Made for and tested on the reMarkable Paper Pro with OS 3.29.1 only; other reMarkable models are not supported
-and their compatibility is not guaranteed. Following newer OS versions happens when I have time, and may not happen.
+Made for and tested on the reMarkable Paper Pro with OS 3.29.1. Other reMarkable models are not supported.
+Updates for newer OS versions may take some time to follow.
 
 > The Paper Pro part, rmpp-remote, is one of the **rmpp add-ons**, built on
 > [rmpp-packages](https://github.com/lorancecall/rmpp-packages): it is installed by rmpp setup and loaded into
