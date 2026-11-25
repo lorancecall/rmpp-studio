@@ -58,8 +58,8 @@ It injects input as a real pen and finger, so do not run two remote-control tool
 
   The packages install to `/opt/rmpp-studio` with `rmpp-studio` and `rmpp-ctl` in `/usr/bin` and a menu entry.
 - **macOS** (14 Sonoma or newer; Apple Silicon `arm64` or Intel `x86_64`): `rmpp-studio-<version>-macos-<arch>.dmg`,
-  drag the app to Applications. It is not notarized: the first start needs right click > Open (or
-  `xattr -dr com.apple.quarantine /Applications/rmpp-studio.app`). The command-line tool is
+  drag the app to Applications. It is not notarized: the first time, macOS blocks it; allow it in
+  System Settings > Privacy & Security (or run `xattr -dr com.apple.quarantine /Applications/rmpp-studio.app`). The command-line tool is
   `rmpp-ctl-<version>-macos-<arch>.tar.gz`.
 - **macOS / Linux from source**: from this checkout, `./install.sh` (python3 ≥ 3.9). It makes its own venv in
   `~/.local/share/rmpp-studio` (PySide6 + Pillow, nothing installed into your system Python), puts `rmpp-studio` and

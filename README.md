@@ -9,7 +9,7 @@ Record, edit and export tutorials for the reMarkable Paper Pro, and drive the Pa
 script, or by an AI agent). Editing and exporting recordings works without a Paper Pro; everything that looks at or
 touches the Paper Pro needs rmpp-remote on it.
 
-Made for and tested on the reMarkable Paper Pro with OS 3.29.1. Other reMarkable models are not supported.
+Made for and tested on the reMarkable Paper Pro with OS 3.29. Other reMarkable models are not supported.
 Updates for newer OS versions may take some time to follow.
 
 > The Paper Pro part, rmpp-remote, is one of the **rmpp add-ons**, built on
@@ -32,10 +32,10 @@ has **rmpp setup**, the installer for all rmpp add-ons, including rmpp-studio's 
   by default). It installs `rmpp-preload` first ([all packages and dependencies](https://github.com/lorancecall/rmpp-packages/blob/main/docs/packages.md)).
 - The app on your computer, from the [latest release](https://github.com/lorancecall/rmpp-studio/releases/latest):
   Windows `rmpp-studio-setup-<version>.exe`; Linux `.deb`, `.rpm`, `.AppImage` or `.tar.gz`; macOS `.dmg` (not
-  notarized: right click > Open the first time). Its connection dialog finds the Paper Pro (**USB cable** = 10.11.99.1).
+  notarized: the first time, allow it in System Settings > Privacy & Security). Its connection dialog finds the Paper Pro (**USB cable** = 10.11.99.1).
 - After a reMarkable OS update: **Restore** in rmpp setup.
-- Without rmpp setup, removing it, next to other mods, `rmpp-ctl`, from source, building:
-  [docs/install.md](docs/install.md).
+- Installing without rmpp setup, uninstalling, using it next to other mods, `rmpp-ctl`, running from source, and
+  building: [docs/install.md](docs/install.md).
 
 ## Use
 
