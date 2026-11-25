@@ -1,7 +1,7 @@
 maintainer="lorancecall <84116812+lorancecall@users.noreply.github.com>"
 pkgname=rmpp-remote
 pkgver=0.4.1
-pkgrel=2
+pkgrel=3
 upstream_author="lorancecall"
 category="utility"
 pkgdesc="rmpp-studio's Paper Pro part: screen capture, recording, UI lookup, text, pen and touch input for rmpp-studio on a computer"
@@ -55,10 +55,13 @@ postinstall() {
 	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
 	sync
 	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
-	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins. The restart
+	# waits until apk.vellum has exited (a large package can outlast the timer); a restart already waiting
+	# covers this package too, so never restart directly while one is active.
 	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemctl is-active -q rmpp-restart-xochitl.service || \
 	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
-		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		/bin/sh -c 'i=0; while pidof apk.vellum >/dev/null && [ $i -lt 900 ]; do sleep 1; i=$((i + 1)); done; [ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
 		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
 }
 
@@ -84,10 +87,13 @@ postupgrade() {
 	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
 	sync
 	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
-	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins. The restart
+	# waits until apk.vellum has exited (a large package can outlast the timer); a restart already waiting
+	# covers this package too, so never restart directly while one is active.
 	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemctl is-active -q rmpp-restart-xochitl.service || \
 	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
-		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		/bin/sh -c 'i=0; while pidof apk.vellum >/dev/null && [ $i -lt 900 ]; do sleep 1; i=$((i + 1)); done; [ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
 		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
 }
 
@@ -111,10 +117,13 @@ predeinstall() {
 	pidof rmpp-remote | xargs -r kill 2>/dev/null || true
 	sync
 	mount -o remount,ro / || echo "note: / stays read-write until xochitl restarts"
-	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins
+	# one xochitl restart per Vellum transaction: (re)arm the timer, so the last package script wins. The restart
+	# waits until apk.vellum has exited (a large package can outlast the timer); a restart already waiting
+	# covers this package too, so never restart directly while one is active.
 	systemctl stop rmpp-restart-xochitl.timer 2>/dev/null || true
+	systemctl is-active -q rmpp-restart-xochitl.service || \
 	systemd-run --quiet --unit=rmpp-restart-xochitl --on-active=15 --timer-property=AccuracySec=1s \
-		/bin/sh -c '[ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
+		/bin/sh -c 'i=0; while pidof apk.vellum >/dev/null && [ $i -lt 900 ]; do sleep 1; i=$((i + 1)); done; [ -x /usr/lib/rmpp/restart ] && exec /usr/lib/rmpp/restart; systemctl reset-failed xochitl; systemctl restart xochitl' || \
 		{ systemctl reset-failed xochitl 2>/dev/null || true; systemctl restart xochitl; }
 	# `vellum purge` (rmpp setup: "Also delete their settings and data"): settings and data in /home too
 	if [ "$VELLUM_PURGE" = "1" ]; then
